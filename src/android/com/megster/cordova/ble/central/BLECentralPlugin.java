@@ -53,6 +53,10 @@ public class BLECentralPlugin extends CordovaPlugin implements BluetoothAdapter.
     private static final String CONNECT = "connect";
     private static final String DISCONNECT = "disconnect";
 
+    private static final String BOND = "bond";
+    private static final String IS_BONDED = "isBonded";
+    private static final String LIST_BONDED = "listBonded";
+
     private static final String READ = "read";
     private static final String WRITE = "write";
     private static final String WRITE_WITHOUT_RESPONSE = "writeWithoutResponse";
@@ -164,6 +168,20 @@ public class BLECentralPlugin extends CordovaPlugin implements BluetoothAdapter.
 
             String macAddress = args.getString(0);
             disconnect(callbackContext, macAddress);
+
+        } else if (action.equals(BOND)) {
+
+            String macAddress = args.getString(0);
+            bond(callbackContext, macAddress);
+
+        } else if (action.equals(IS_BONDED)) {
+
+            String macAddress = args.getString(0);
+            isBonded(callbackContext, macAddress);
+
+        } else if (action.equals(LIST_BONDED)) {
+
+            getBondedDevices(callbackContext);
 
         } else if (action.equals(READ)) {
 
@@ -354,6 +372,59 @@ public class BLECentralPlugin extends CordovaPlugin implements BluetoothAdapter.
         }
         callbackContext.success();
 
+    }
+
+    private void bond(CallbackContext callbackContext, String macAddress) {
+        Peripheral peripheral = peripherals.get(macAddress);
+
+        if (peripheral == null) {
+            callbackContext.error("Peripheral " + macAddress + " not found.");
+            return;
+        }
+
+        if (!peripheral.isConnected()) {
+            callbackContext.error("Peripheral " + macAddress + " is not connected.");
+            return;
+        }
+
+        peripheral.bond(callbackContext);
+    }
+
+    private void isBonded(CallbackContext callbackContext, String macAddress) {
+        Peripheral peripheral = peripherals.get(macAddress);
+
+        if (peripheral == null) {
+            callbackContext.error("Peripheral " + macAddress + " not found. Please rescan.");
+            return;
+        }
+
+        if (!peripheral.isConnected()) {
+            callbackContext.error("Peripheral " + macAddress + " is not connected. Please connect first");
+            return;
+        }
+
+        peripheral.isBonded(callbackContext);
+    }
+
+    private void getBondedDevices(CallbackContext callbackContext) {
+        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+
+        JSONObject json = new JSONObject();
+
+        for(BluetoothDevice device : pairedDevices) {
+            try {
+                json.put("name", device.getName());
+                json.put("id", device.getAddress()); // mac address
+                json.put("advertising", "Bonded");
+                // TODO real RSSI if we have it, else
+                json.put("rssi", "Bonded");
+            } catch (JSONException e) { // this shouldn't happen
+                e.printStackTrace();
+            }
+        }
+        PluginResult result = new PluginResult(PluginResult.Status.OK, json);
+        callbackContext.sendPluginResult(result);
     }
 
     private void read(CallbackContext callbackContext, String macAddress, UUID serviceUUID, UUID characteristicUUID) {

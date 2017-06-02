@@ -91,6 +91,18 @@ module.exports = {
         cordova.exec(successWrapper, failure, 'BLE', 'connect', [device_id]);
     },
 
+    bond: function (device_id, success, failure) {
+        cordova.exec(success, failure, 'BLE', 'bond', [device_id]);
+    },
+
+    isBonded: function (device_id, success, failure) {
+        cordova.exec(success, failure, 'BLE', 'isBonded', [device_id]);
+    },
+
+    listBonded: function (success, failure) {
+        cordova.exec(success, failure, 'BLE', 'listBonded', []);
+    },
+
     disconnect: function (device_id, success, failure) {
         cordova.exec(success, failure, 'BLE', 'disconnect', [device_id]);
     },

@@ -17,7 +17,9 @@ package com.megster.cordova.ble.central;
 import android.app.Activity;
 
 import android.bluetooth.*;
+import android.content.Context;
 import android.os.Build;
+import android.telecom.Call;
 import android.util.Base64;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.LOG;
@@ -36,7 +38,7 @@ public class Peripheral extends BluetoothGattCallback {
 
     // 0x2902 org.bluetooth.descriptor.gatt.client_characteristic_configuration.xml
     //public final static UUID CLIENT_CHARACTERISTIC_CONFIGURATION_UUID = UUID.fromString("00002902-0000-1000-8000-00805F9B34FB");
-    public final static UUID CLIENT_CHARACTERISTIC_CONFIGURATION_UUID = UUIDHelper.uuidFromString("2902");
+    public final static UUID CLIENT_CHARACTERISTIC_CONFIGURATION_UUID = com.megster.cordova.ble.central.UUIDHelper.uuidFromString("2902");
     private static final String TAG = "Peripheral";
 
     private BluetoothDevice device;
@@ -89,6 +91,39 @@ public class Peripheral extends BluetoothGattCallback {
             gatt.close();
             gatt = null;
         }
+    }
+
+    public void bond(CallbackContext callbackContext) {
+        boolean startBonding = getDevice().createBond();
+
+        if (!startBonding) {
+            PluginResult result = new PluginResult(PluginResult.Status.ERROR, "Failed to bond");
+            callbackContext.sendPluginResult(result);
+        } else {
+            PluginResult result = new PluginResult(PluginResult.Status.OK, "Bonding started. Enter pin plz");
+            callbackContext.sendPluginResult(result);
+        }
+    }
+
+    public void isBonded(CallbackContext callbackContext) {
+        BluetoothDevice device = getDevice();
+
+        int state = device.getBondState();
+        String stateString;
+        switch (state) {
+            case BluetoothDevice.BOND_BONDED:
+                stateString = "BONDED";
+                break;
+            case BluetoothDevice.BOND_BONDING:
+                stateString = "BONDING";
+                break;
+            case BluetoothDevice.BOND_NONE:
+            default:
+                stateString = "NONE";
+        }
+
+        PluginResult result = new PluginResult(PluginResult.Status.OK, "Bond state: " + stateString);
+        callbackContext.sendPluginResult(result);
     }
 
     public JSONObject asJSONObject()  {
